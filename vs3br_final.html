@@ -1,0 +1,370 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<!--Start of HTML file -->
+    
+    <head>
+        <meta charset = "UTF-8"/>
+        
+        
+        <style>
+    /*        Style Sheet*/
+            .text_style {
+                color: white;
+                font-family: Garamond Rajdhani Soho Arial sans-serif;
+            }
+            
+            .parameters_heading {
+                font-size: 24px;
+                color: white;
+                font-family: Garamond Rajdhani Soho Arial sans-serif;
+            }
+            
+            .parameters {
+                font-size: 20px;
+                color: white;
+                font-family: Garamond Rajdhani Soho Arial sans-serif;
+            }
+            
+            div.tooltip {	
+                position: absolute;			
+                text-align: center;			
+                width: 60px;					
+                height: 28px;					
+                padding: 2px;				
+                font: 12px sans-serif;		
+                background: lightsteelblue;	
+                border: 0px;		
+                border-radius: 8px;			
+                pointer-events: none;			
+            }
+            
+            star {
+                fill: #c5d9f9;
+            }
+
+            .row {
+              width: 100%;
+              text-align: center;
+            }
+
+            .block {
+              display: inline-block;
+            }
+            
+            .flex-container {
+              display: flex;
+            }
+        </style>
+    
+        
+        <title>Dyson Sphere</title>
+    </head>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    
+    <script type="text/javascript">
+        var data;
+        var worldEnergy = 14080;
+        var bbox = null;
+        var centerDrawingArea = null;
+        var scaleDiam = null;
+        var scaleDist = null;
+        
+        function loadData() {
+            d3.json("solar_system.json").then(function(d) {
+                data = d;
+                drawSolarSystem(d);
+            });
+        };
+        
+        function drawSolarSystem(solarSystemData) {
+            
+            // Find min and max diameter. Find min and max distance. Find min and max speed.
+            var minDiameter = -1, maxDiameter = -1;
+            var minDistance = -1, maxDistance = -1;
+            var minSpeed = -1, maxSpeed = -1;
+            bbox = document.querySelector("#solar_system").getBoundingClientRect();
+            centerDrawingArea = [(bbox.x + bbox.width / 2), (bbox.y  + bbox.height / 2)];
+            
+            data.forEach(d => maxDiameter = Math.max(maxDiameter, d.diameter));
+            data.forEach(d => maxDistance = Math.max(maxDistance, d.distance));
+            data.forEach(d => maxSpeed = Math.max(maxSpeed, d.orbit_vel));
+            data.forEach(d => minDiameter = (minDiameter < 0) ? d.diameter : Math.min(minDiameter, d.diameter));
+            data.forEach(d => minDistance = (minDistance < 0) ? d.distance : Math.min(minDistance, d.distance));
+            data.forEach(d => minSpeed = (minSpeed < 0) ? d.orbit_vel : Math.min(minSpeed, d.orbit_vel));
+            console.log(maxDiameter);
+            console.log(maxDistance);
+            console.log(minDiameter);
+            console.log(minDistance);
+            
+            // Define linear scales for diameter and distance
+            scaleDiam = d3.scaleLinear()
+                .domain([minDiameter, maxDiameter])
+                .range([10, 50]);
+            scaleDist = d3.scaleLinear()
+                .domain([minDistance, maxDistance])
+                .range ([100, 500]);
+            
+            // Scale for speed
+            var scaleSpeed = d3.scaleLinear()
+                .domain([minSpeed, maxSpeed])
+                .range ([10, 30]);
+            
+            // Drawing sun
+            drawCircle(centerDrawingArea, solarSystemData[0], scaleDist, scaleDiam, scaleSpeed);
+            
+            drawCircle(centerDrawingArea, solarSystemData[1], scaleDist, scaleDiam, scaleSpeed);
+            drawCircle(centerDrawingArea, solarSystemData[2], scaleDist, scaleDiam, scaleSpeed);
+            drawCircle(centerDrawingArea, solarSystemData[3], scaleDist, scaleDiam, scaleSpeed);
+            drawCircle(centerDrawingArea, solarSystemData[4], scaleDist, scaleDiam, scaleSpeed);
+            drawCircle(centerDrawingArea, solarSystemData[5], scaleDist, scaleDiam, scaleSpeed);
+//            drawCircle(centerDrawingArea, solarSystemData[6], scaleDist, scaleDiam, scaleSpeed);
+            
+            makeDysonRings(centerDrawingArea, 50, 1);
+            drawStars(100, (bbox.x + bbox.width), (bbox.y + bbox.height));
+            
+        };
+        
+        function drawStars(num, xLim, yLim) {
+          for (var i = 0; i < num; i += 1) {
+              var star = d3.select("#solar_system")
+                        .append("circle")
+                        .attr("cx", getRandomInt(xLim))
+                        .attr("cy", getRandomInt(yLim))
+                        .attr("r", 2)
+                        .style("fill", "#c5d9f9")
+                        .style("opacity", 1);
+//              console.log("Star");
+//              console.log(star);
+//              twinkleStar(star);
+        
+              function twinkleStar(x) {
+                console.log(x);
+                x.style("opacity", 0)
+                    .transition()
+                    .duration(Math.random() * 2)
+                    .ease(d3.easeLinear)
+                    .style("opacity", 1)
+                    .transition()
+                    .duration(Math.random() * 2)
+                    .ease(d3.easeLinear)
+                    .on("end", twinkleStar);
+            };
+          }  
+        };
+        
+        function getRandomInt(max) {
+          return Math.floor(Math.random() * Math.floor(max));
+        };
+        
+        function makeDysonRings(centerOfSolarSystem, radius, numberOfSpheres) {
+            radius = scaleDist(radius);
+            d3.select("#solar_system")
+                    .selectAll("line").remove();
+//            radius = 2 * radius;
+            numberOfSpheres = 2 * numberOfSpheres;
+            var separationAngles = (2 * Math.PI/ numberOfSpheres);
+            var x = centerOfSolarSystem[0];
+            var y = centerOfSolarSystem[1];
+            
+            for (var i = 0; i < numberOfSpheres; i++) {
+                console.log("making spheres");
+                var angle = i * separationAngles;
+                
+                d3.select("#solar_system")
+                    .append("line")
+                    .style("stroke", "#ddd")
+                    .attr("stroke-width", 4)
+                    .attr("class", "line")
+                    .style("stroke-dasharray", ("3, 3")) 
+                    .attr('x1', x + (Math.cos(angle) * radius))
+                    .attr('y1', y + (Math.sin(angle) * radius))
+                    .attr('x2', x)
+                    .attr('y2', y)
+                    .transition()
+                    .duration(1500)
+                    .attr('stroke-dashoffset', 0);
+            }
+            calculateEnergy();
+        };
+        
+        function drawCircle(center, planet, scaleDist, scaleDiam, scaleSpeed) {
+            // Define the div for the tooltip
+            var div = d3.select("body").append("div")	
+                .attr("class", "tooltip")				
+                .style("opacity", 0);
+            var thisPlanet = null;
+            var centerX = null;
+            var centerY = null;
+            
+            if (planet.name != 'Moon') {
+                centerX = center[0] + (planet.name.includes('Sun') ? 0 : scaleDist(planet.distance));
+                centerY = center[1] + 0;
+                thisPlanet = d3.select("#solar_system")
+                        .append("circle")
+                        .attr("degrees", 0)
+                        .attr("cx", centerX)
+                        .attr("cy", centerY)
+                        .attr("r", scaleDiam(planet.diameter))
+                        .style("fill", planet.color)
+                        .on("mouseover", function() {		
+                            div.transition()		
+                                .duration(200)		
+                                .style("opacity", .9);		
+                            div	.html(planet.name + "<br/>")	
+                                .style("left", (d3.event.pageX) + "px")		
+                                .style("top", (d3.event.pageY - 28) + "px");
+                            highlight(this);
+                        })					
+                        .on("mouseout", function(d) {		
+                            div.transition()		
+                                .duration(500)		
+                                .style("opacity", 0);
+                            unHighlight(this);
+                        });
+            }
+            
+            if (thisPlanet != null && planet.name.includes('Sun') != true) {
+                var rotate1 = setInterval(function() { rotate(thisPlanet); }, scaleSpeed(planet.orbit_vel));
+                thisPlanet.attr("intervalId", rotate1);
+                
+                function rotate(circle) {       
+                    var lastDegrees = Number(circle.attr("degrees")) + 1;
+        
+                    if (lastDegrees == 360) 
+                        lastDegrees = 0;
+
+                    circle.attr("degrees", lastDegrees);
+                    var adj1 = lastDegrees * (Math.PI/180);
+                    var cx = center[0] + (Math.cos(adj1) * scaleDist(planet.distance));
+                    var cy = center[1] + (Math.sin(adj1) * scaleDist(planet.distance));
+                    
+                    circle.attr("cx", cx).attr("cy", cy);
+                }
+             }          
+        }            
+        
+        function highlight(obj) {
+            d3.select(obj)
+                .style("opacity", 0.5)
+                .style("stroke-width","3");
+        }
+        
+        function unHighlight(obj){
+            d3.select(obj)
+                .style("opacity", 1)
+                .style("stroke-width","");
+        }
+        
+        function updateAlbedo(val) {
+            d3.select("#albedo-value").text(val + " "); 
+            calculateEnergy();
+        };
+
+        function updateRingDiam(val) {
+            d3.select("#ring-diam").text(val + " "); 
+            makeDysonRings(centerDrawingArea, val, Number(d3.select("#ring-num").text()));
+            calculateEnergy();
+        };
+        
+        function updateRingNum(val) {
+            d3.select("#ring-num").text(val + " "); 
+            makeDysonRings(centerDrawingArea, Number(d3.select("#ring-diam").text()), val);
+            calculateEnergy();
+        };
+        
+        function calculateEnergy() {
+            var albedo = Number(d3.select("#albedo-value").text());
+            var diamRing = Number(d3.select("#ring-diam").text());
+            var numRing = Number(d3.select("#ring-num").text());
+            var ringsPerSphere = 200000 * 1000;
+            
+            var solarConstant = 1366;
+            var radiusRingSphere = 50;
+            
+            var energyGenerated = (1 - albedo) * Math.PI * numRing;
+            energyGenerated = energyGenerated * solarConstant;
+            energyGenerated = energyGenerated * (radiusRingSphere ** 2);
+            energyGenerated = energyGenerated * ringsPerSphere;
+            
+            energyGenerated = energyGenerated/ (10 ** 11);
+            energyGenerated = energyGenerated * (2.38);
+            
+            
+            d3.select("#energy").text(energyGenerated.toLocaleString() + " Mtoe");
+            worldEnergyEquivalent(energyGenerated);
+            calculateCosts();
+        };
+        
+        function worldEnergyEquivalent(energyGenerated) {
+            var energyQuivalence = energyGenerated/ worldEnergy;  
+            d3.select("#world_energy").text(energyQuivalence.toFixed(2) + " Earths"); 
+        };
+        
+        function calculateCosts() {
+            var launchCosts = 100;
+            var distanceCosts = 0.1;
+            var distanceFromCenter = Number(d3.select("#ring-diam").text());
+            var distanceToCover = 150 - distanceFromCenter;
+            distanceToCover = distanceToCover * 10 ** 6;
+            var totalCosts = launchCosts + distanceToCover * distanceCosts;
+            totalCosts = totalCosts * Number(d3.select("#ring-num").text());
+            totalCosts = totalCosts / 1000;
+            d3.select("#cost").text(" " + totalCosts.toLocaleString() + " billions of dollars in deployment costs"); 
+        }
+        
+        
+        
+    </script>
+    <body id="body_main" onload="loadData()"  bgcolor="#000000">
+        <h1 class="text_style">Economics of a Dyson Sphere</h1>
+        <div class="flex-container">
+            <div>
+                <svg id="solar_system" width="1200" height="1200"/>
+            </div>
+            <div>
+                <text class="parameters_heading">Parameters</text><br><br><br>
+                
+                <text class="parameters">Albedo (Proportion of the incident light or radiation that is reflected by a surface)</text><br>
+                <text class="parameters">Values are between 0 and 1</text><br>
+                <text class="parameters" id="albedo-value">0.1</text><br>
+                <input value="0.1" type="range" min="0.1" max="0.9" step="0.1" id="albedo" onchange="updateAlbedo(this.value);">
+                <br><br><br>
+                
+                <text class="parameters">Diameter of the dyson sphere in million kilometers</text><br>
+                <text class="parameters">Minimum: 50 million km (Almost as far as Mercury)</text><br>
+                <text class="parameters">Maximum: 150 million km (Distance of Earth from the sun)</text><br>
+                <text class="parameters" id="ring-diam">50</text><br>
+                <input value="1" type="range" min="50" max="150"  onchange="updateRingDiam(this.value);">
+                <br><br><br>
+                
+                <text class="parameters">Number of dyson spheres</text><br>
+                <text class="parameters">Minimum: 1</text><br>
+                <text class="parameters">Maximum: 10</text><br>
+                <text class="parameters" maxlength="4" id="ring-num">1</text><br>
+                <input value="1" type="range" min="1" max="10" step="1" list="steplist" onchange="updateRingNum(this.value);">
+                <br><br><br>
+                
+                <text class="parameters">---------------------------------------------------------------------------------------</text>
+                <br><br>
+                
+                <text class="parameters_heading">This will generate</text>
+                <text id="energy" class="parameters_heading"></text><br><br>
+                
+                <text class="parameters_heading">This will require</text>
+                <text id="cost" class="parameters_heading"></text><br><br>
+                
+                <text class="parameters_heading">As of 2017, this is enough to power </text>
+                <text class="parameters_heading" id="world_energy"></text><br><br>
+                
+                
+                <text class="parameters"><a href="dyson_sphere.html"><u><i>How it's calulated?</i></u></a></text>
+                
+                
+            </div>
+        </div>    
+    </body>
+    <script type="text/javascript">
+        calculateEnergy();
+    </script>
+<!--End of HTML file    -->
+</html>

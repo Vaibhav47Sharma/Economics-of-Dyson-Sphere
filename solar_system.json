@@ -1,0 +1,44 @@
+﻿[
+  {
+    "name": "Sun",
+    "diameter": 1391020,
+    "distance": 0,
+    "orbit_vel": 0,
+    "color": "#faff0c"
+  },
+  {
+    "name": "Mercury",
+    "diameter": 4879,
+    "distance": 57.9,
+    "orbit_vel": 47.4,
+    "color": "#7f7f6e"
+  },
+  {
+    "name": "Venus",
+    "diameter": 12104,
+    "distance": 108.2,
+    "orbit_vel": 35,
+    "color": "#e06a16"
+  },
+  {
+    "name": "Earth",
+    "diameter": 12756,
+    "distance": 149.6,
+    "orbit_vel": 29.8,
+    "color": "#0961f9"
+  },
+  {
+    "name": "Moon",
+    "diameter": 3475,
+    "distance": 0.384,
+    "orbit_vel": 1,
+    "color": "#e6e9ef"
+  },
+  {
+    "name": "Mars",
+    "diameter": 6792,
+    "distance": 227.9,
+    "orbit_vel": 24.1,
+    "color": "#f44d2c"
+  }
+]
