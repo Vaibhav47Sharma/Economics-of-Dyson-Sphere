@@ -1,3 +1,3 @@
 # Economics-of-Dyson-Sphere
 
-![](Project Demo.gif)
+![](Project_Demo.gif)
